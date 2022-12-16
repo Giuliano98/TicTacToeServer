@@ -21,6 +21,10 @@ public enum ServerToClientSignifier
 
 }
 
+public enum LoadingAndSavingSignifier
+{
+    NameAndPassword = 0,
+}
 
 
 public class NetworkedServer : MonoBehaviour
@@ -32,6 +36,8 @@ public class NetworkedServer : MonoBehaviour
     int socketPort = 5491;
 
     //#
+    static string dirPath = Application.dataPath + Path.DirectorySeparatorChar;
+    static string PlayerAccountsFile = "PlayerAccounts.txt";
     LinkedList<PlayerAccount> playerAccounts;
 
     // Start is called before the first frame update
@@ -45,6 +51,12 @@ public class NetworkedServer : MonoBehaviour
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
 
         playerAccounts = new LinkedList<PlayerAccount>();
+        LoadPlayerAccounts();
+
+        foreach (var pa in playerAccounts)
+        {
+            Debug.Log(pa.Name + "," + pa.Password);
+        }
     }
 
     // Update is called once per frame
@@ -116,6 +128,7 @@ public class NetworkedServer : MonoBehaviour
                 playerAccounts.AddLast(newPlayerAccount);
                 SendMessageToClient(ServerToClientSignifier.AccountCreationComplete + "", id);
                 Debug.Log("New Player Account Added!!!");
+                SavePlayerAccounts();
             }
             else
             {
@@ -132,7 +145,39 @@ public class NetworkedServer : MonoBehaviour
     }
 
     //# LOGIN AND CREATING ACCOUNT FUNCTIONS
+    private void SavePlayerAccounts()
+    {
+        using (StreamWriter sw = new StreamWriter(dirPath + PlayerAccountsFile))
+        {
+            foreach (PlayerAccount pa in playerAccounts)
+            {
+                sw.WriteLine((int)LoadingAndSavingSignifier.NameAndPassword + "," + pa.Name + "," + pa.Password);
+            }
+        }
+    }
 
+    private void LoadPlayerAccounts()
+    {
+        if (!File.Exists(dirPath + PlayerAccountsFile))
+            return;
+
+
+        using (StreamReader sr = new StreamReader(dirPath + PlayerAccountsFile))
+        {
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                string[] csv = line.Split(',');
+                int signifier = int.Parse(csv[0]);
+
+                if (signifier == (int)LoadingAndSavingSignifier.NameAndPassword)
+                {
+                    PlayerAccount pa = new PlayerAccount(csv[1], csv[2]);
+                    playerAccounts.AddLast(pa);
+                }
+            }
+        }
+    }
 
 
 }
