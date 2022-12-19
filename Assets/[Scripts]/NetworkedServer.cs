@@ -148,11 +148,25 @@ public class NetworkedServer : MonoBehaviour
                 gameRooms.AddLast(gr);
                 SendMessageToClient(ServerToClientSignifier.GameStart + "", gr.Player1);
                 SendMessageToClient(ServerToClientSignifier.GameStart + "", gr.Player2);
+
+                bool randStart = Random.Range(0, 2) != 0;
+                if (randStart)
+                {
+                    SendMessageToClient(ServerToClientSignifier.YourTurn + "", gr.Player1);
+                    SendMessageToClient(ServerToClientSignifier.SetSymbols + "," + "x", gr.Player1);
+                }
+                else
+                {
+                    SendMessageToClient(ServerToClientSignifier.YourTurn + "", gr.Player2);
+                    SendMessageToClient(ServerToClientSignifier.SetSymbols + "," + "x", gr.Player2);
+                }
+
                 WaiterPlayerID = -1;
             }
         }
         else if (_signifier == ClientToServerSignifier.TicTacToeGamePlay)
         {
+
             GameRoom gr = GetGameRoomWithClientID(id);
             if (gr != null)
             {
@@ -162,7 +176,28 @@ public class NetworkedServer : MonoBehaviour
                     SendMessageToClient(ServerToClientSignifier.OpponentPlays + "", gr.Player1);
             }
 
-
+        }
+        else if (_signifier == ClientToServerSignifier.PlayerPlayed)
+        {
+            GameRoom gr = GetGameRoomWithClientID(id);
+            if (gr != null)
+            {
+                if (gr.Player1 == id)
+                    SendMessageToClient(ServerToClientSignifier.YourTurn + "", gr.Player2);
+                if (gr.Player2 == id)
+                    SendMessageToClient(ServerToClientSignifier.YourTurn + "", gr.Player1);
+            }
+        }
+        else if (_signifier == ClientToServerSignifier.StringTable)
+        {
+            GameRoom gr = GetGameRoomWithClientID(id);
+            if (gr != null)
+            {
+                if (gr.Player1 == id)
+                    SendMessageToClient(ServerToClientSignifier.UpdateMarks + "," + csv[1], gr.Player2);
+                if (gr.Player2 == id)
+                    SendMessageToClient(ServerToClientSignifier.UpdateMarks + "," + csv[1], gr.Player1);
+            }
         }
     }
 
@@ -211,6 +246,10 @@ public class NetworkedServer : MonoBehaviour
         return null;
     }
 
+    private void SelectRandomFirstTurn()
+    {
+
+    }
 }
 
 public class PlayerAccount
@@ -239,11 +278,14 @@ public class PlayerAccount
 
 public class GameRoom
 {
+    public string GameRoomName;
     public int Player1, Player2;
-
+    public static int GameRoomsTotal = 0;
     public GameRoom(int p1, int p2)
     {
         Player1 = p1;
         Player2 = p2;
+        GameRoomsTotal++;
+        GameRoomName = Player1 + Player2 + GameRoomsTotal + "";
     }
 }
